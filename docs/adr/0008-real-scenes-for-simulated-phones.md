@@ -1,6 +1,6 @@
 # 0008. Simulated phones photograph real scenes, committed as small grey copies
 
-Status: proposed, 2026-10-27.
+Status: accepted, 2026-10-27.
 
 The first simulated phones photographed scenes made up in code: soft blobs and boxes. They looked nothing like photos,
 and the post's own simulations use real Commons scenes. The reader asked for real photos where the licence allows.
