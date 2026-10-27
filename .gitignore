@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+.DS_Store
+
+# Photos are downloaded on demand. Only the list of titles is committed.
+data/*
+!data/photos.tsv
+
+# Output of 04_your_photos.py: it may hold your own phone's fingerprint.
+out/

@@ -1,0 +1,26 @@
+# The tests, then each experiment that needs no download. CI never downloads from Wikimedia Commons:
+# the author runs experiment 03 by hand before each release.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+      - run: uv sync --locked
+      - run: uv run pytest
+      - run: uv run experiments/01_simulated_phones.py
+      - run: uv run experiments/02_averaging.py
+      - name: The real-photo experiments stop with a clear message when the photos are missing
+        run: |
+          if uv run experiments/03_real_iphones.py 2> err.txt; then exit 1; fi
+          grep -q fetch_photos err.txt
