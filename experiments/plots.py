@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 IMG = Path(__file__).resolve().parent.parent / 'docs/img'
 PAPER, LINE, INK, GREY, LIGHT = '#f8f7f3', '#e0ddd4', '#18181b', '#52525b', '#a1a1aa'
 ACCENT, ACCENT_LINE = '#1d4ed8', '#bfdbfe'   # the key data, and the context
+SCENES = 'Scenes: photos by -wuppertaler, Wikimedia Commons, CC BY 4.0. List: data/scenes/CREDITS.md'
 
 plt.rcParams.update({
     'font.family': 'DejaVu Sans', 'font.size': 10, 'text.color': INK, 'axes.labelcolor': GREY,
@@ -23,6 +24,11 @@ def title(fig, text: str, subtitle: str) -> None:
     """The title states the finding. The subtitle says how to read the figure."""
     fig.text(0.02, 0.97, text, fontsize=14, fontweight='bold', va='top')
     fig.text(0.02, 0.91, subtitle, fontsize=10, color=GREY, va='top')
+
+
+def source(fig, text: str) -> None:
+    """The source line under a figure: the data and its credit."""
+    fig.text(0.02, 0.02, text, fontsize=8, color=GREY)
 
 
 def save(fig, path: str | Path) -> Path:

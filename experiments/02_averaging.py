@@ -16,9 +16,9 @@ from matplotlib import font_manager
 from PIL import Image, ImageDraw, ImageFont
 
 import fingerprint as fp
-from plots import ACCENT, GREY, IMG, LIGHT, grey, save, title
+from plots import ACCENT, GREY, IMG, LIGHT, SCENES, grey, save, source, title
 
-SIZE, GAP, TOP = 240, 16, 40     # the animation: panel side, gap and label height, in pixels
+SIZE, GAP, TOP, FOOT = 240, 16, 40, 28   # the animation: panel side, gap, label and credit heights
 STEPS = [1, 2, 4, 8, 16, 32, 64]
 FRAMES = [1, 2, 3, 4, 5, 6, 8, 10, 13, 16, 20, 25, 32, 40, 50, 64]
 
@@ -42,7 +42,7 @@ slope = np.polyfit(np.log(n), np.log(left), 1)[0]
 print(f'The fresh part shrinks as N^{slope:.2f}. Pure averaging gives N^-0.50.')
 
 fig, ax = plt.subplots(figsize=(8, 4.6))
-fig.subplots_adjust(top=0.78, bottom=0.13, left=0.1, right=0.96)
+fig.subplots_adjust(top=0.78, bottom=0.17, left=0.1, right=0.96)
 title(fig, 'Four times the photos halve the fresh noise',
       'A simulated phone. Each dot is the fresh noise left in the fingerprint after N photos.\n'
       'The dashed line falls as 1/√N.')
@@ -54,21 +54,24 @@ ax.set(xticks=STEPS, xticklabels=STEPS, yticks=[0.003, 0.01, 0.03], yticklabels=
        xlabel='Photos in the fingerprint, N', ylabel='Fresh noise left in K̂')
 ax.minorticks_off()
 ax.grid(axis='y')
+source(fig, SCENES)
 save(fig, '02_averaging.png')
 
 # The animation: photo n, its noise, and the fingerprint of the first n photos.
 font = ImageFont.truetype(font_manager.findfont('DejaVu Sans'), 15)
+small = ImageFont.truetype(font_manager.findfont('DejaVu Sans'), 11)
 frames = []
 for n in FRAMES:
     photo = photos[n - 1]
     panels = [(f'Photo {n}', photo / 255), ('Its noise', grey(fp.noise(photo))),
               (f'Fingerprint of {n} photo' + 's' * (n > 1), grey(fp.fingerprint(photos[:n])))]
-    frame = Image.new('L', (3 * SIZE + 4 * GAP, TOP + SIZE + GAP), 248)
+    frame = Image.new('L', (3 * SIZE + 4 * GAP, TOP + SIZE + FOOT), 248)
     draw = ImageDraw.Draw(frame)
     for i, (label, image) in enumerate(panels):
         left = GAP + i * (SIZE + GAP)
         frame.paste(Image.fromarray((np.round(image * 31) * 255 / 31).astype(np.uint8)), (left, TOP))
         draw.text((left, TOP - 8), label, fill=24, font=font, anchor='ls')
+    draw.text((GAP, TOP + SIZE + FOOT - 8), SCENES.split('. List')[0], fill=96, font=small, anchor='ls')
     frames.append(frame)
 gif = IMG / '02_averaging.gif'
 frames[0].save(gif, save_all=True, append_images=frames[1:], duration=[700] * (len(frames) - 1) + [2500], loop=0)

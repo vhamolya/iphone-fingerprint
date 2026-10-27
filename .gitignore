@@ -7,6 +7,9 @@ __pycache__/
 # Photos are downloaded on demand. Only the list of titles is committed.
 data/*
 !data/photos.tsv
+# Small real scenes for the simulated phones: committed, see experiments/make_scenes.py.
+!data/scenes.tsv
+!data/scenes/
 
 # Output of 04_your_photos.py: it may hold your own phone's fingerprint.
 out/

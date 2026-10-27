@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import fingerprint as fp
-from plots import ACCENT, GREY, IMG, INK, LIGHT, save, title
+from plots import ACCENT, GREY, IMG, INK, LIGHT, save, source, title
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
 photos = {group: sorted((DATA / group).glob('*.jpg')) for group in ('fingerprint', 'same', 'other')}
@@ -80,7 +80,7 @@ for ax, clean in zip(axes, (False, True)):
     ax.grid(axis='x')
     ax.minorticks_off()
 axes[0].set(yticks=[0, 1], yticklabels=['10 other\niPhone 11s', 'The same\niPhone 11'])
-fig.text(0.02, 0.03, 'Photos: Wikimedia Commons, 50 by -wuppertaler and 10 by other photographers, under CC BY 4.0 and '
-         'other licences. List: docs/img/CREDITS.md', fontsize=8, color=GREY)
+source(fig, 'Photos: Wikimedia Commons, 50 by -wuppertaler and 10 by other photographers, under CC BY 4.0 and other '
+       'licences. List: docs/img/CREDITS.md')
 save(fig, '03_real_iphones.png')
 shutil.copy(DATA / 'CREDITS.md', IMG / 'CREDITS.md')

@@ -10,12 +10,14 @@ K is the phone's fingerprint. The method has three steps:
 Before the score, the clean-up removes the shared pattern: the part of a fingerprint that every phone of one
 model carries. Post: https://vhamolya.com/blog/which-iphone-took-this-photo/
 """
+from functools import cache
 from os import PathLike
+from pathlib import Path
 
 import numpy as np
 import pywt
 from PIL import Image
-from scipy.ndimage import gaussian_filter, uniform_filter
+from scipy.ndimage import uniform_filter
 
 # The post's defaults ("The method in formulas"). Try a change in a new experiment, not here.
 WAVELET = 'db4'           # Daubechies wavelets for the cleaned copy
@@ -116,15 +118,21 @@ def score(photo, k: np.ndarray) -> float:
 
 # Simulated phones, for the experiments and the tests. They exaggerate: a real K is far fainter.
 
+SCENES = Path(__file__).resolve().parent / 'data' / 'scenes'
+
+
+@cache
+def _scenes() -> list[np.ndarray]:
+    return [load(p) for p in sorted(SCENES.glob('*.jpg'))]
+
+
 def scene(rng: np.random.Generator, size: int = 512) -> np.ndarray:
-    """A made-up scene from 20 to 235: soft light, a few hard-edged boxes and some fine texture."""
-    soft = gaussian_filter(rng.standard_normal((size, size)), size / 10)
-    s = 128 + 50 * soft / soft.std()
-    for _ in range(6):
-        (y, x), (h, w) = rng.integers(0, size, 2), rng.integers(size // 10, size // 3, 2)
-        s[y:y + h, x:x + w] += rng.uniform(-50, 50)
-    s += 3 * gaussian_filter(rng.standard_normal((size, size)), 1.5)
-    return np.clip(s, 20, 235).astype(np.float32)
+    """A real scene: a random crop of one of 8 Commons photos in data/scenes/, cleaned of their own grain.
+    Their credits are in data/scenes/CREDITS.md."""
+    pool = _scenes()
+    s = pool[rng.integers(len(pool))]
+    y, x = (rng.integers(0, n - size + 1) for n in s.shape)
+    return s[y:y + size, x:x + size].copy()
 
 
 class SimulatedPhone:

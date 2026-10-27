@@ -18,10 +18,11 @@ def photos(phone, n, seed):
 
 
 def test_cleaned_copy_keeps_the_scene_and_drops_the_grain():
-    rng = np.random.default_rng(0)
-    scene = fp.scene(rng, SIZE)
-    grainy = scene + 3 * rng.standard_normal(scene.shape)
-    assert (fp.cleaned_copy(grainy) - scene).std() < 0.6 * (grainy - scene).std()
+    """A smooth gradient with one sharp edge: the cleaned copy keeps both and drops most of the grain."""
+    y, x = np.mgrid[:SIZE, :SIZE]
+    scene = (60 + 0.3 * x + 0.1 * y + 80 * (x > SIZE // 2)).astype(np.float32)
+    grainy = scene + 3 * np.random.default_rng(0).standard_normal(scene.shape).astype(np.float32)
+    assert (fp.cleaned_copy(grainy) - scene).std() < 0.5 * (grainy - scene).std()
 
 
 def test_noise_is_the_photo_minus_its_cleaned_copy():
@@ -32,11 +33,13 @@ def test_noise_is_the_photo_minus_its_cleaned_copy():
 
 
 def test_noise_follows_the_phone():
+    """Two scenes from one phone line up. Scenes from two phones do not."""
     a, b = fp.SimulatedPhone(1, SIZE, strength=0.03), fp.SimulatedPhone(2, SIZE, strength=0.03)
-    scenes = [fp.scene(np.random.default_rng(s), SIZE) for s in (0, 1)]
-    a1, a2, b1 = (fp.noise(phone.photo(s)) for phone, s in ((a, scenes[0]), (a, scenes[1]), (b, scenes[0])))
-    assert fp.correlation(a1, a2) > 0.3
-    assert abs(fp.correlation(a1, b1)) < 0.1
+    rng = np.random.default_rng(2)
+    scenes = [fp.scene(rng, SIZE) for _ in range(2)]
+    a1, a2, b2 = fp.noise(a.photo(scenes[0])), fp.noise(a.photo(scenes[1])), fp.noise(b.photo(scenes[1]))
+    assert fp.correlation(a1, a2) > 0.2
+    assert abs(fp.correlation(a1, b2)) < 0.02
 
 
 def test_fingerprint_gets_closer_to_k_with_more_photos():

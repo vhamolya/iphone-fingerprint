@@ -1,13 +1,17 @@
 # Which iPhone took this photo?
 
-![The noise of single photos averages into a fingerprint: a ring appears after about ten photos.](docs/img/02_averaging.gif)
+> **The code of my post
+> [Every iPhone has a fingerprint. Can one photo give you away?](https://vhamolya.com/blog/which-iphone-took-this-photo/)**
+> The post explains each step with interactive figures. This repo lets you run the same steps yourself.
+
+![A simulated phone takes real scenes. The average of their noise forms a ring after about ten photos.](docs/img/02_averaging.gif)
 
 Every camera sensor leaves a faint pattern of its own in its photos. This repo finds it in the photos of one phone,
-and uses it to tell that phone apart from other phones of the same model. It is the code of my post
-**[Every iPhone has a fingerprint. Can one photo give you away?](https://vhamolya.com/blog/which-iphone-took-this-photo/)**
+and uses it to tell that phone apart from other phones of the same model.
 
-_The animation is a simulated phone. Each new photo adds its noise to the average. The fixed pattern adds up, and the
-fresh noise cancels. I planted the pattern in a ring so you can see it. A real fingerprint looks like plain static._
+_The animation is a simulated phone that photographs real scenes. Each new photo adds its noise to the average. The
+fixed pattern adds up, and the fresh noise cancels. I planted the pattern in a ring so you can see it. A real
+fingerprint looks like plain static._
 
 ## Quick start
 
@@ -35,11 +39,14 @@ figure to `docs/img/`.
 
 ### 1. The noise follows the phone
 
-![Two scatter plots of noise values. Two photos from one phone line up with r = 0.71. Photos from two phones do not, r = 0.04.](docs/img/01_simulated_phones.png)
+![Two scatter plots of noise values. Two photos from one phone line up with r = 0.79. Photos from two phones do not, r = 0.01.](docs/img/01_simulated_phones.png)
 
-Two simulated phones take photos. Phone A takes two different scenes, and phone B takes the first scene too. I take
-the noise out of each photo and compare the photos pixel by pixel. Phone A's two photos line up (r = 0.71), though
-their scenes differ. Phone A and phone B do not (r = 0.04), even on the same scene.
+Two simulated phones photograph real scenes. Phone A takes two different scenes, and phone B takes the first scene
+too. I take the noise out of each photo and compare the photos pixel by pixel. Phone A's two photos line up
+(r = 0.79), though their scenes differ. Phone A and phone B do not (r = 0.01), even on the same scene.
+
+As in the post, the comparison uses only pixels that are plain in both scenes. At an edge, the scene leaks into the
+noise, and two photos of one scene line up there whatever the phone.
 
 The simulation exaggerates. Its pattern is 3% of the light. In real photos from one iPhone 11, two photos give
 r = 0.0004 (experiment 3). One photo is not enough, so the method averages many.
@@ -48,8 +55,8 @@ r = 0.0004 (experiment 3). One photo is not enough, so the method averages many.
 
 ![A log-log chart: the fresh noise left in the fingerprint falls along the 1/√N line from 1 to 64 photos.](docs/img/02_averaging.png)
 
-A simulated phone takes 64 photos of new scenes. The average of their noise is the phone's fingerprint. The fixed part
-adds up, and the fresh part cancels: it shrinks as N^-0.52, close to the 1/√N of pure averaging. So four times the
+A simulated phone takes 64 photos of real scenes. The average of their noise is the phone's fingerprint. The fixed
+part adds up, and the fresh part cancels: it shrinks as N^-0.48, close to the 1/√N of pure averaging. So four times the
 photos halve it. The script also makes the animation at the top of this page.
 
 ### 3. Real iPhone 11s
@@ -174,9 +181,26 @@ only part of it, so a stranger's photo can still score above 60. Part 4 of the p
   models, the quality chart and the iPhone 16 results come from Flickr photos and from my own phone. I cannot share
   them, so they stay numbers in the post.
 - Experiment 3 is one phone, 40 photos and 20 test photos. It shows the method. It does not measure its error rates.
-- Simulated phones exaggerate. Their pattern is 1 to 3% of the light, and their scenes are made up in code.
+- Simulated phones exaggerate. Their pattern is 1 to 3% of the light, far stronger than a real one. Their scenes
+  are real, but the pattern and the fresh noise are added in code.
 - The post also used DRUNet, a neural denoiser, which gave the same results. It needs PyTorch, so the repo leaves it
   out.
+
+## Other public data sets
+
+The repo ships and downloads only Wikimedia Commons photos, because each one carries a clear licence. These forensic
+sets are good next steps. I checked their terms on 27 October 2026. Read each source before you use it.
+
+| Data set | What it holds | Terms | Use here |
+|---|---|---|---|
+| [VISION](https://lesc.dinfo.unifi.it/VISION/) (Shullani and others, 2017) | Photos and videos from 35 devices | CC BY-SA 4.0 | A fetch script would fit. Crops would need CC BY-SA. |
+| [iRAW](https://ieee-dataport.org/documents/iraw-multi-lens-uncompressed-iphone-camera-dataset-ai-driven-multimedia-forensics) | RAW frames from iPhone 16 Pro Max, 17 Pro and 17 Pro Max | IEEE DataPort subscription, no licence stated | Link only |
+| [FODB](https://arxiv.org/abs/2011.02241) (Hadwiger and Riess, 2021) | 23,106 photos from 27 devices | No licence stated | Link only |
+| [Dresden](http://forensics.inf.tu-dresden.de/ddimgdb/) (Gloe and Böhme, 2010) | About 17,000 photos from compact cameras and DSLRs | Site unreachable, terms unknown | Link only |
+| [SCMI30](https://github.com/IPSA-Lab/scmi30-iitrpr) | 9,937 photos from 30 phone models | GPL-3.0, and "research and education purposes only" | Link only |
+| [LAION-Mobile](https://arxiv.org/abs/2609.11134) | About a million web photos from phones | Lists and scores only, no images | Link only |
+
+Flickr photos each carry their owner's licence, and the post's Flickr set stays private (ADR 0004).
 
 ## Credits, licence and citation
 
@@ -184,6 +208,10 @@ The 60 photos come from Wikimedia Commons: 50 by -wuppertaler (CC BY 4.0) and 10
 4.0, CC BY-SA 4.0, CC BY 2.0, CC BY 2.5 and CC0). [`docs/img/CREDITS.md`](docs/img/CREDITS.md) lists each photo with
 its author, licence and link. The repo holds only their titles, in [`data/photos.tsv`](data/photos.tsv). The fetch
 script downloads them and writes the credits from the Commons API.
+
+The simulated phones photograph 8 more Commons photos by -wuppertaler (CC BY 4.0). They are small grey copies in
+[`data/scenes/`](data/scenes/), cleaned of their own grain, and
+[`data/scenes/CREDITS.md`](data/scenes/CREDITS.md) lists them. `experiments/make_scenes.py` made them.
 
 The code is under the [MIT licence](LICENSE). Figures made from the Commons photos (experiments 3 and 4) keep the
 photos' credit.
