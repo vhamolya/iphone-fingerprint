@@ -18,11 +18,10 @@ import sys
 import time
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import fingerprint as fp
-from plots import ACCENT, GREY, IMG, INK, LIGHT, save, source, title
+from plots import ACCENT, GREY, IMG, INK, LIGHT, inside, plate, save
 
 DATA = Path(__file__).resolve().parent.parent / 'data'
 photos = {group: sorted((DATA / group).glob('*.jpg')) for group in ('fingerprint', 'same', 'other')}
@@ -59,11 +58,13 @@ print(f'\nSingle photos, pixel by pixel: median r = {np.median(r["same"]):.4f} f
       f'({len(r["same"])} pairs) and {np.median(r["other"]):.4f} for two phones ({len(r["other"])} pairs).')
 print('The post reports 0.0004 and 0.0001.')
 
-fig, axes = plt.subplots(1, 2, figsize=(9, 4.4), sharey=True)
-fig.subplots_adjust(top=0.72, bottom=0.2, left=0.13, right=0.97, wspace=0.12)
-title(fig, 'After the clean-up, other iPhone 11s stop matching',
-      'Scores (PCE) of 20 real photos against the fingerprint of one iPhone 11. Without the clean-up, the pattern\n'
-      'that every iPhone 11 shares makes every phone match. The dashed line is the usual threshold, 60.')
+fig, card = plate(3, 'After the clean-up, other iPhone 11s stop matching',
+                  'Scores (PCE) of 20 real photos against the fingerprint of one iPhone 11. Without the clean-up, the '
+                  'pattern\nthat every iPhone 11 shares makes every phone match. The dashed line is the usual threshold, '
+                  '60.', 'Photos: Wikimedia Commons, 50 by -wuppertaler and 10 by other photographers, under CC BY 4.0 '
+                  'and other licences. List: docs/img/CREDITS.md', size=(9, 5.2))
+axes = fig.add_gridspec(1, 2, wspace=0.12, **inside(card, left=0.13, bottom=0.17, right=0.03, top=0.12)).subplots(
+    sharey=True)
 for ax, clean in zip(axes, (False, True)):
     for row, (group, colour) in enumerate((('other', LIGHT), ('same', ACCENT))):
         values = np.array(scores[group, clean])
@@ -71,7 +72,7 @@ for ax, clean in zip(axes, (False, True)):
         ax.scatter(values, row + jitter, s=36, color=colour, alpha=0.85, linewidths=0, zorder=3)
         median = np.median(values)
         ax.plot([median, median], [row - 0.25, row + 0.25], color=INK, lw=2, zorder=4)
-        ax.text(median, row + 0.3, f'{median:,.0f}', ha='center', fontsize=9, color=INK)
+        ax.text(median, row + 0.3, f'{median:,.0f}', ha='center', fontsize=8.5, color=INK, fontweight='medium')
     ax.axvline(fp.THRESHOLD, color=LIGHT, ls='--', lw=1)
     ax.set_xscale('symlog', linthresh=10)
     ax.set(xlim=(-4, 30000), ylim=(-0.6, 1.7), xticks=[0, 10, 100, 1000, 10000],
@@ -80,7 +81,5 @@ for ax, clean in zip(axes, (False, True)):
     ax.grid(axis='x')
     ax.minorticks_off()
 axes[0].set(yticks=[0, 1], yticklabels=['10 other\niPhone 11s', 'The same\niPhone 11'])
-source(fig, 'Photos: Wikimedia Commons, 50 by -wuppertaler and 10 by other photographers, under CC BY 4.0 and other '
-       'licences. List: docs/img/CREDITS.md')
 save(fig, '03_real_iphones.png')
 shutil.copy(DATA / 'CREDITS.md', IMG / 'CREDITS.md')

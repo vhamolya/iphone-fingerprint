@@ -122,25 +122,20 @@ SCENES = Path(__file__).resolve().parent / 'data' / 'scenes'
 
 
 @cache
-def _scenes() -> list[np.ndarray]:
-    return [load(p) for p in sorted(SCENES.glob('*.jpg'))]
-
-
-def scene(rng: np.random.Generator, size: int = 512) -> np.ndarray:
-    """A real scene: a random crop of one of 8 Commons photos in data/scenes/, cleaned of their own grain.
-    Their credits are in data/scenes/CREDITS.md."""
-    pool = _scenes()
-    s = pool[rng.integers(len(pool))]
-    y, x = (rng.integers(0, n - size + 1) for n in s.shape)
-    return s[y:y + size, x:x + size].copy()
+def scenes(shape: tuple[int, int] = (360, 480)) -> tuple[np.ndarray, ...]:
+    """The 32 real scenes in data/scenes/, as whole grey photos of the given (height, width), cleaned of their own
+    grain. Their credits are in data/scenes/CREDITS.md."""
+    size = (shape[1], shape[0])
+    return tuple(np.asarray(Image.open(p).convert('L').resize(size, Image.LANCZOS), np.float32)
+                 for p in sorted(SCENES.glob('*.jpg')))
 
 
 class SimulatedPhone:
     """A phone made in code: photo = scene × (1 + K) + fresh noise. Each photo gets new fresh noise."""
 
-    def __init__(self, seed: int, size: int = 512, strength: float = 0.02, fresh: float = 2.0):
+    def __init__(self, seed: int, shape: tuple[int, int] = (360, 480), strength: float = 0.02, fresh: float = 2.0):
         self.rng = np.random.default_rng(seed)
-        self.k = (strength * self.rng.standard_normal((size, size))).astype(np.float32)
+        self.k = (strength * self.rng.standard_normal(shape)).astype(np.float32)
         self.fresh = fresh
 
     def photo(self, scene: np.ndarray) -> np.ndarray:

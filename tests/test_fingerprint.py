@@ -9,12 +9,14 @@ from PIL import Image
 import fingerprint as fp
 
 ROOT = Path(__file__).resolve().parent.parent
-SIZE = 256
+SIZE = 256                # synthetic arrays
+SHAPE = (180, 240)        # simulated phones: height and width
 
 
-def photos(phone, n, seed):
-    rng = np.random.default_rng(seed)
-    return [phone.photo(fp.scene(rng, SIZE)) for _ in range(n)]
+def photos(phone, scenes):
+    """Photos of the given scenes. Fingerprints use scenes 0 to 19 and new photos scenes 20 to 31: a new photo of a
+    scene that is in the fingerprint matches through the scene's edges, whatever the phone."""
+    return [phone.photo(fp.scenes(SHAPE)[i]) for i in scenes]
 
 
 def test_cleaned_copy_keeps_the_scene_and_drops_the_grain():
@@ -26,7 +28,7 @@ def test_cleaned_copy_keeps_the_scene_and_drops_the_grain():
 
 
 def test_noise_is_the_photo_minus_its_cleaned_copy():
-    photo = photos(fp.SimulatedPhone(1, SIZE), 1, seed=0)[0]
+    photo = photos(fp.SimulatedPhone(1, SHAPE), [0])[0]
     w = photo - fp.cleaned_copy(photo)
     w = w - w.mean(1, keepdims=True) - w.mean(0, keepdims=True)
     np.testing.assert_allclose(fp.noise(photo), w, atol=1e-3)
@@ -34,24 +36,24 @@ def test_noise_is_the_photo_minus_its_cleaned_copy():
 
 def test_noise_follows_the_phone():
     """Two scenes from one phone line up. Scenes from two phones do not."""
-    a, b = fp.SimulatedPhone(1, SIZE, strength=0.03), fp.SimulatedPhone(2, SIZE, strength=0.03)
+    a, b = fp.SimulatedPhone(1, SHAPE, strength=0.03), fp.SimulatedPhone(2, SHAPE, strength=0.03)
     rng = np.random.default_rng(2)
-    scenes = [fp.scene(rng, SIZE) for _ in range(2)]
+    scenes = [fp.scenes(SHAPE)[i] for i in rng.choice(32, 2, replace=False)]
     a1, a2, b2 = fp.noise(a.photo(scenes[0])), fp.noise(a.photo(scenes[1])), fp.noise(b.photo(scenes[1]))
     assert fp.correlation(a1, a2) > 0.2
     assert abs(fp.correlation(a1, b2)) < 0.02
 
 
 def test_fingerprint_gets_closer_to_k_with_more_photos():
-    phone = fp.SimulatedPhone(1, SIZE, strength=0.01, fresh=3.0)
-    shots = photos(phone, 32, seed=0)
+    phone = fp.SimulatedPhone(1, SHAPE, strength=0.01, fresh=3.0)
+    shots = photos(phone, range(32))
     match = [fp.correlation(fp.fingerprint(shots[:n]), phone.k) for n in (2, 8, 32)]
     assert match[0] < match[1] < match[2]
     assert match[2] > 0.5
 
 
 def test_fingerprint_reads_files(tmp_path):
-    shots = photos(fp.SimulatedPhone(1, SIZE), 3, seed=0)
+    shots = photos(fp.SimulatedPhone(1, SHAPE), range(3))
     paths = []
     for i, shot in enumerate(shots):
         paths.append(tmp_path / f'{i}.png')
@@ -60,10 +62,10 @@ def test_fingerprint_reads_files(tmp_path):
 
 
 def test_score_tells_the_phones_apart():
-    a, b = fp.SimulatedPhone(1, SIZE), fp.SimulatedPhone(2, SIZE)
-    k = fp.clean_up(fp.fingerprint(photos(a, 12, seed=0)))
-    assert fp.score(photos(a, 1, seed=1)[0], k) > 10 * fp.THRESHOLD
-    assert abs(fp.score(photos(b, 1, seed=1)[0], k)) < 20
+    a, b = fp.SimulatedPhone(1, SHAPE), fp.SimulatedPhone(2, SHAPE)
+    k = fp.clean_up(fp.fingerprint(photos(a, range(12))))
+    assert fp.score(photos(a, [20])[0], k) > 10 * fp.THRESHOLD
+    assert abs(fp.score(photos(b, [20])[0], k)) < 20
 
 
 def test_unrelated_noise_scores_near_one():
@@ -89,17 +91,17 @@ def test_zero_mean_removes_row_and_column_patterns():
 def test_clean_up_removes_a_shared_pattern():
     """Two phones of one model share row and column offsets in each 2 × 2 sub-grid. The clean-up removes them."""
     rng = np.random.default_rng(0)
-    shared = np.zeros((SIZE, SIZE))
+    shared = np.zeros(SHAPE)
     for dy in (0, 1):
         for dx in (0, 1):
-            shared[dy::2, dx::2] = 0.01 * (rng.standard_normal((SIZE // 2, 1)) + rng.standard_normal((1, SIZE // 2)))
-    a, b = fp.SimulatedPhone(1, SIZE), fp.SimulatedPhone(2, SIZE)
+            shared[dy::2, dx::2] = 0.01 * (rng.standard_normal((SHAPE[0] // 2, 1)) + rng.standard_normal((1, SHAPE[1] // 2)))
+    a, b = fp.SimulatedPhone(1, SHAPE), fp.SimulatedPhone(2, SHAPE)
     a.k, b.k = a.k + shared, b.k + shared
-    k = fp.fingerprint(photos(a, 12, seed=0))
-    other = photos(b, 1, seed=1)[0]
+    k = fp.fingerprint(photos(a, range(12)))
+    other = photos(b, [20])[0]
     assert fp.pce(fp.noise(other), other * k) > fp.THRESHOLD
     assert abs(fp.score(other, fp.clean_up(k))) < 20
-    assert fp.score(photos(a, 1, seed=1)[0], fp.clean_up(k)) > 10 * fp.THRESHOLD
+    assert fp.score(photos(a, [20])[0], fp.clean_up(k)) > 10 * fp.THRESHOLD
 
 
 def test_flatten_removes_a_repeating_pattern():
@@ -121,12 +123,12 @@ def test_photo_list():
 
 
 def test_your_photos_script(tmp_path):
-    a, b = fp.SimulatedPhone(1, SIZE), fp.SimulatedPhone(2, SIZE)
+    a, b = fp.SimulatedPhone(1, SHAPE), fp.SimulatedPhone(2, SHAPE)
     (tmp_path / 'mine').mkdir()
-    for i, shot in enumerate(photos(a, 10, seed=0)):
+    for i, shot in enumerate(photos(a, range(10))):
         Image.fromarray(np.round(shot).astype(np.uint8)).save(tmp_path / 'mine' / f'{i}.png')
     for name, phone in (('a.png', a), ('b.png', b)):
-        Image.fromarray(np.round(photos(phone, 1, seed=1)[0]).astype(np.uint8)).save(tmp_path / name)
+        Image.fromarray(np.round(photos(phone, [20])[0]).astype(np.uint8)).save(tmp_path / name)
     Image.new('L', (SIZE, SIZE // 2)).save(tmp_path / 'small.png')
     figure = tmp_path / 'scores.png'
     out = subprocess.run([sys.executable, ROOT / 'experiments/04_your_photos.py', tmp_path / 'mine', tmp_path / 'a.png',

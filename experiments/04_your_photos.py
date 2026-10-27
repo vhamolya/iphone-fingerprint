@@ -6,7 +6,8 @@ above about 60 usually means the same phone.
 What works best:
   - originals straight from the phone: not cropped, resized or edited, and not sent through a messenger;
   - 20 or more photos for the fingerprint, bright and plain ones (sky, walls) rather than dark or busy ones;
-  - the main camera at 1×, so that every photo has the same size.
+  - the main camera at 1×, so that every photo has the same size;
+  - new photos of other scenes: a second shot of a scene in the fingerprint can match through the scene's edges.
 
 From the iPhone 16 on, Apple's processing adds a pattern that every phone of the model shares. The clean-up removes
 part of it, so a stranger's photo can still score above 60 (Part 4 of the post).
@@ -22,12 +23,11 @@ import time
 from collections import Counter
 from pathlib import Path
 
-import matplotlib.pyplot as plt
 import numpy as np
 from PIL import Image
 
 import fingerprint as fp
-from plots import ACCENT, GREY, LIGHT, save, title
+from plots import ACCENT, GREY, LIGHT, inside, plate, save
 
 try:
     from pillow_heif import register_heif_opener   # only with `uv run --with pillow-heif`
@@ -74,19 +74,20 @@ for path in (p for t in args.tests for p in files(t)):
 if args.figure and results:
     results.sort(key=lambda r: r[1])
     above = sum(s > fp.THRESHOLD for _, s in results)
-    fig, ax = plt.subplots(figsize=(8, 1.6 + 0.26 * len(results)))
-    fig.subplots_adjust(top=1 - 1.25 / fig.get_figheight(), bottom=0.6 / fig.get_figheight(), left=0.2, right=0.97)
-    title(fig, f'{above} of {len(results)} photos score above {fp.THRESHOLD}',
-          f'Scores (PCE) of new photos against the fingerprint of {len(refs)} photos in {args.folder}/.\n'
-          'Above the dashed line, a photo most likely comes from the same phone.')
+    fig, card = plate(4, f'{above} of {len(results)} photos score above {fp.THRESHOLD}',
+                      f'Scores (PCE) of new photos against the fingerprint of {len(refs)} photos in {args.folder}/.\n'
+                      'Above the dashed line, a photo most likely comes from the same phone.',
+                      'Made by experiments/04_your_photos.py', size=(8, 2.4 + 0.26 * len(results)))
+    m = inside(card, left=0.17, bottom=0.6 / ((card[3] - card[1]) * fig.get_figheight()), right=0.04, top=0.03)
+    ax = fig.add_axes([m['left'], m['bottom'], m['right'] - m['left'], m['top'] - m['bottom']])
     names = [f'{p.parent.name}/{p.name}' for p, _ in results]
     values = [s for _, s in results]
     ax.barh(names, values, color=[ACCENT if s > fp.THRESHOLD else LIGHT for s in values], height=0.7)
     ax.axvline(fp.THRESHOLD, color=GREY, ls='--', lw=1)
     ax.set_xscale('symlog', linthresh=10)
-    ax.set(xlim=(min(-4, 2 * min(values)), max(1000, 2 * max(values))), xticks=[0, 10, 100, 1000], xticklabels=['0', '10', '100', '1,000'],
-           xlabel='Score (PCE)')
-    ax.tick_params(axis='y', labelsize=8, length=0)
+    ax.set(xlim=(min(-4, 2 * min(values)), max(1000, 2 * max(values))), xticks=[0, 10, 100, 1000],
+           xticklabels=['0', '10', '100', '1,000'], xlabel='Score (PCE)')
+    ax.tick_params(axis='y', length=0)
     ax.grid(axis='x')
     ax.minorticks_off()
     save(fig, args.figure)
