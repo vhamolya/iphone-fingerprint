@@ -11,7 +11,7 @@
 
 | 01 · Hypothesis | 02 · Method | 03 · Result |
 |---|---|---|
-| No two camera sensors are made alike. Some pixels catch a little more light than others, in every photo. That fixed pattern is a fingerprint of the phone. | Subtract a cleaned copy from each photo to get its noise. Average the noise of many photos from one phone. Score a new photo against that average. | On 20 real iPhone 11 photos, 9 of the 10 from the same phone score above every photo from 10 other iPhone 11s. A clean-up step makes the difference. |
+| No two camera sensors are made alike. Some pixels catch a little more light than others, in every photo. That fixed pattern is a fingerprint of the phone. | Subtract a cleaned copy from each photo to get its noise. Average the noise of many photos from one phone. Score a new photo against that average. | In the post, one photo put the right phone first among 15 in 52 to 84% of tests, from the iPhone 5s to the 14 Pro. Here, 9 of 10 photos from one iPhone 11 score above every photo from 10 other iPhone 11s. |
 
 ## Quick start
 
@@ -57,7 +57,7 @@ The comparison uses only pixels that are plain in both scenes, as in the post. A
 noise, and two photos of one scene line up there whatever the phone.
 
 The simulation exaggerates: its pattern is 3% of the light. Two real photos from one iPhone 11 give r = 0.0004
-(experiment 3). One photo is not enough, so the method averages many.
+(experiment 3). The pattern is there but faint, so the method averages many photos to bring it out.
 
 <sub>PART 2 · THE METHOD</sub>
 
@@ -149,9 +149,9 @@ about 2.5 GB of memory.
 | With the clean-up | −0.1 to 368, median 58 | −1.6 to 4.6 |
 
 Without the clean-up, every iPhone 11 matches. All of them carry a pattern from the model's design and processing.
-The clean-up removes it, and then other phones score between −2 and 5, as unrelated noise should. 9 of the 10 photos
-from the same phone score above every other phone. Only 5 of them clear the usual threshold of 60, so one photo is a
-hint, not proof.
+The clean-up removes it, and then the right phone stands out. 9 of its 10 photos score above every photo from the
+other phones, and 5 clear the usual threshold of 60. The other phones score between −2 and 5, as unrelated noise
+should, so none comes near a false match.
 
 Single photos, compared pixel by pixel, give a median r of 0.0004 for one phone (45 pairs) and 0.0001 for two phones
 (100 pairs). Those are the numbers in Part 1 of the post.
@@ -178,34 +178,22 @@ and git ignores `out/`.
 - Pillow reads JPEG and PNG. For HEIC, run `uv run --with pillow-heif experiments/04_your_photos.py ...`.
 
 From the iPhone 16 on, Apple's processing adds a pattern that every phone of the model shares. The clean-up removes
-only part of it, so a stranger's photo can still score above 60. Part 4 of the post covers it.
+only part of it, so a stranger's photo can still score above 60. Part 4 of the post adds two steps: subtract the
+shared pattern, learned from strangers' photos, and score five photos together. With both, the right phone came
+first in 55 to 97% of tests, on nine models from the 16 to the 18. These steps need the post's Flickr photos, so the
+repo leaves them out.
 
 ## Limits
 
 - The repo reproduces the parts of the post that run on simulated phones and public photos. The line-ups of 28 iPhone
   models, the quality chart and the iPhone 16 results come from Flickr photos and from my own phone. I cannot share
   them, so they stay numbers in the post.
-- Experiment 3 is one phone, 40 photos and 20 test photos. It shows the method. It does not measure its error rates.
+- Experiment 3 shows the method on one phone, with 20 test photos. The post measures the error rates, on line-ups of
+  15 phones for each of 28 models.
 - Simulated phones exaggerate. Their pattern is 2.5 to 3% of the light, far stronger than a real one. Their scenes
   are real photos, but the pattern and the fresh noise are added in code.
 - The post also used DRUNet, a neural denoiser, which gave the same results. It needs PyTorch, so the repo leaves it
   out.
-
-## Other public data sets
-
-The repo ships and downloads only Wikimedia Commons photos, because each one carries a clear licence. These forensic
-sets are good next steps. I checked their terms on October 27, 2026. Read each source before you use it.
-
-| Data set | What it holds | Terms | Use here |
-|---|---|---|---|
-| [VISION ↗](https://lesc.dinfo.unifi.it/VISION/) (Shullani and others, 2017) | Photos and videos from 35 devices | CC BY-SA 4.0 | A fetch script would fit. Crops would need CC BY-SA. |
-| [iRAW ↗](https://ieee-dataport.org/documents/iraw-multi-lens-uncompressed-iphone-camera-dataset-ai-driven-multimedia-forensics) | RAW frames from iPhone 16 Pro Max, 17 Pro and 17 Pro Max | IEEE DataPort subscription, no licence stated | Link only |
-| [FODB ↗](https://arxiv.org/abs/2011.02241) (Hadwiger and Riess, 2021) | 23,106 photos from 27 devices | No licence stated | Link only |
-| [Dresden ↗](http://forensics.inf.tu-dresden.de/ddimgdb/) (Gloe and Böhme, 2010) | About 17,000 photos from compact cameras and DSLRs | Site unreachable, terms unknown | Link only |
-| [SCMI30 ↗](https://github.com/IPSA-Lab/scmi30-iitrpr) | 9,937 photos from 30 phone models | GPL-3.0, and "research and education purposes only" | Link only |
-| [LAION-Mobile ↗](https://arxiv.org/abs/2609.11134) | About a million web photos from phones | Lists and scores only, no images | Link only |
-
-Flickr photos each carry their owner's licence, and the post's Flickr set stays private (ADR 0004).
 
 ## Credits, licence and citation
 
